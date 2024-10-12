@@ -20,6 +20,9 @@
         canvas {
             background-color: black;
             display: block;
+            max-width: 90vw; /* Canvas resizes to fit within the viewport */
+            max-height: 90vw;
+            height: auto;
         }
 
         .scoreboard {
@@ -31,23 +34,48 @@
 
         .scoreboard div {
             margin-bottom: 10px;
+            font-size: 1.2rem;
         }
 
         .controls {
             margin-top: 20px;
             text-align: center;
+            width: 90vw;
         }
 
         .slider-container {
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
             margin: 10px;
+            width: 100%;
+        }
+
+        label {
+            font-size: 1.1rem;
         }
 
         .slider {
-            width: 300px;
-            margin-left: 10px;
+            width: 60%; /* Adjust slider width for smaller screens */
+        }
+
+        @media (max-width: 600px) {
+            .scoreboard {
+                top: 5px;
+                left: 5px;
+                font-size: 1rem;
+            }
+
+            .slider-container {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .slider {
+                width: 100%;
+                margin-left: 0;
+                margin-top: 10px;
+            }
         }
     </style>
 </head>
