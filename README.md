@@ -22,7 +22,7 @@ You can try the live demo of the project by opening the `index.html` file in you
 
 1. **Download or Clone the Repository**:
    ```
-   git clone https://github.com/your-username/grid-ball-game.git
+   git clone https://github.com/boredom1234/yinyangpingpong.git
    ```
 
 2. **Open the Project**:
@@ -54,14 +54,6 @@ You can try the live demo of the project by opening the `index.html` file in you
 ## Requirements
 
 No external libraries are needed for this project. It runs entirely in the browser using HTML, CSS, and JavaScript.
-
-## Screenshots
-
-### Default Game View:
-![Screenshot 1](./screenshots/default_view.png)
-
-### Game with Adjusted Speed and Resolution:
-![Screenshot 2](./screenshots/adjusted_view.png)
 
 ## Future Improvements
 
