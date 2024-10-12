@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grid Ball Game with Speed and Resolution Control</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #282c34;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+
+        canvas {
+            background-color: black;
+            display: block;
+        }
+
+        .scoreboard {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: red;
+        }
+
+        .scoreboard div {
+            margin-bottom: 10px;
+        }
+
+        .controls {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 10px;
+        }
+
+        .slider {
+            width: 300px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="scoreboard">
+        <div id="whiteScore">White: 0</div>
+        <div id="blackScore">Black: 0</div>
+    </div>
+    <canvas id="gameCanvas" width="600" height="600"></canvas>
+
+    <div class="controls">
+        <div class="slider-container">
+            <label for="speedSlider">Speed: </label>
+            <input type="range" id="speedSlider" class="slider" min="10" max="200" value="60">
+        </div>
+        <div class="slider-container">
+            <label for="resolutionSlider">Resolution: </label>
+            <input type="range" id="resolutionSlider" class="slider" min="300" max="1000" value="600">
+        </div>
+    </div>
+
+    <script>
+        const GRIDSIZE = 10;
+        let SCREEN_SIZE = 600; // Initial screen size
+        let CELL_SIZE = SCREEN_SIZE / GRIDSIZE;
+
+        let FPS = 60; // Default speed (frame rate)
+
+        class Ball {
+            constructor(x, y, color, player) {
+                this.position = [x, y];
+                this.color = color;
+                this.player = player;
+                this.size = CELL_SIZE / 10;
+                this.vector = [5, 4]; // Velocity in x, y directions
+                this.lastXY = this.getXY();
+            }
+
+            move() {
+                this.position[0] += this.vector[0];
+                this.position[1] += this.vector[1];
+            }
+
+            getXY() {
+                return [
+                    Math.max(0, Math.min(GRIDSIZE - 1, Math.floor(this.position[0] / CELL_SIZE))),
+                    Math.max(0, Math.min(GRIDSIZE - 1, Math.floor(this.position[1] / CELL_SIZE))),
+                ];
+            }
+
+            updateVector(grid) {
+                const [x, y] = this.getXY();
+
+                // Check for wall collisions
+                if (this.position[0] - this.size <= 0 || this.position[0] + this.size >= SCREEN_SIZE) {
+                    this.vector[0] *= -1;
+                }
+                if (this.position[1] - this.size <= 0 || this.position[1] + this.size >= SCREEN_SIZE) {
+                    this.vector[1] *= -1;
+                }
+
+                // Check for collisions with grid cells and color the cell
+                const cellColor = grid[y][x];
+                if (this.color === cellColor) {
+                    this.lastXY = [x, y];
+                    return;
+                }
+
+                // Bounce back if ball changes cell (collision detection)
+                if (x !== this.lastXY[0]) {
+                    this.vector[0] *= -1;
+                }
+                if (y !== this.lastXY[1]) {
+                    this.vector[1] *= -1;
+                }
+
+                this.lastXY = [x, y];
+                return [x, y];
+            }
+        }
+
+        function initGrid() {
+            const cells = Array.from({ length: GRIDSIZE * GRIDSIZE }, () => (Math.random() > 0.5 ? "white" : "black"));
+            const grid = [];
+            for (let i = 0; i < GRIDSIZE; i++) {
+                grid.push(cells.slice(i * GRIDSIZE, (i + 1) * GRIDSIZE));
+            }
+            return grid;
+        }
+
+        function drawGrid(ctx, grid) {
+            for (let y = 0; y < GRIDSIZE; y++) {
+                for (let x = 0; x < GRIDSIZE; x++) {
+                    ctx.fillStyle = grid[y][x];
+                    ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                }
+            }
+        }
+
+        function countScores(grid) {
+            let whiteScore = 0;
+            let blackScore = 0;
+            for (const row of grid) {
+                whiteScore += row.filter(cell => cell === "white").length;
+                blackScore += row.filter(cell => cell === "black").length;
+            }
+            return { whiteScore, blackScore };
+        }
+
+        function displayScores(scores) {
+            document.getElementById("whiteScore").textContent = `White: ${scores.whiteScore}`;
+            document.getElementById("blackScore").textContent = `Black: ${scores.blackScore}`;
+        }
+
+        function main() {
+            const canvas = document.getElementById("gameCanvas");
+            const ctx = canvas.getContext("2d");
+
+            const balls = [
+                new Ball(CELL_SIZE / 2, CELL_SIZE / 2, "white", "black"),
+                new Ball(SCREEN_SIZE - CELL_SIZE / 2, SCREEN_SIZE - CELL_SIZE / 2, "black", "white"),
+            ];
+
+            let grid = initGrid();
+
+            // Speed control
+            const speedSlider = document.getElementById("speedSlider");
+            speedSlider.addEventListener("input", () => {
+                FPS = parseInt(speedSlider.value, 10); // Adjust FPS dynamically based on slider value
+            });
+
+            // Resolution control
+            const resolutionSlider = document.getElementById("resolutionSlider");
+            resolutionSlider.addEventListener("input", () => {
+                SCREEN_SIZE = parseInt(resolutionSlider.value, 10);
+                CELL_SIZE = SCREEN_SIZE / GRIDSIZE;
+                canvas.width = SCREEN_SIZE;
+                canvas.height = SCREEN_SIZE;
+                balls.forEach(ball => {
+                    ball.size = CELL_SIZE / 10; // Adjust ball size based on new resolution
+                });
+            });
+
+            function gameLoop() {
+                // Clear canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Draw the grid
+                drawGrid(ctx, grid);
+
+                // Move and update balls
+                for (const ball of balls) {
+                    ball.move();
+                    const ballXY = ball.updateVector(grid);
+                    if (ballXY) {
+                        grid[ballXY[1]][ballXY[0]] = ball.color;
+                    }
+                    ctx.beginPath();
+                    ctx.arc(ball.position[0], ball.position[1], ball.size, 0, Math.PI * 2);
+                    ctx.fillStyle = ball.player;
+                    ctx.fill();
+                    ctx.closePath();
+                }
+
+                // Calculate and display scores
+                const scores = countScores(grid);
+                displayScores(scores);
+
+                setTimeout(() => {
+                    requestAnimationFrame(gameLoop);
+                }, 1000 / FPS); // Control speed with FPS
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        main();
+    </script>
+</body>
+</html>
